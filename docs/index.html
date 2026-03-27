@@ -299,7 +299,11 @@
 
     document.addEventListener('paste', async (e) => {
       e.preventDefault();
-      // First try the Clipboard API for richer data (images, etc.)
+      // Grab DataTransfer data synchronously before it's invalidated
+      const dtEntries = e.clipboardData
+        ? normalizeDataTransfer(e.clipboardData)
+        : [];
+      // Try the Clipboard API for richer data (images, etc.)
       if (navigator.clipboard && navigator.clipboard.read) {
         try {
           const entries = await readClipboardAPI();
@@ -311,9 +315,9 @@
           // fall through to DataTransfer
         }
       }
-      // Fallback to DataTransfer from the paste event
-      if (e.clipboardData) {
-        showResults(normalizeDataTransfer(e.clipboardData), 'Clipboard (paste)');
+      // Fallback to synchronously captured DataTransfer data
+      if (dtEntries.length > 0) {
+        showResults(dtEntries, 'Clipboard (paste)');
       }
     });
 
