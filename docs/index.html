@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clipboard Investigator</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%236C5CE7'/%3E%3Cstop offset='100%25' style='stop-color:%23a855f7'/%3E%3C/linearGradient%3E%3ClinearGradient id='cl' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffffff'/%3E%3Cstop offset='100%25' style='stop-color:%23f0e6ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='16' y='16' width='480' height='480' rx='96' fill='url(%23bg)'/%3E%3Crect x='136' y='160' width='240' height='260' rx='16' fill='url(%23cl)' opacity='.95'/%3E%3Crect x='196' y='120' width='120' height='60' rx='12' fill='url(%23cl)' opacity='.95'/%3E%3Crect x='220' y='108' width='72' height='36' rx='18' fill='url(%23bg)' stroke='%23fff' stroke-width='8'/%3E%3Ccircle cx='310' cy='300' r='60' fill='none' stroke='%236C5CE7' stroke-width='14' opacity='.85'/%3E%3Cline x1='352' y1='342' x2='392' y2='382' stroke='%236C5CE7' stroke-width='14' stroke-linecap='round' opacity='.85'/%3E%3Crect x='168' y='220' width='100' height='10' rx='5' fill='%236C5CE7' opacity='.3'/%3E%3Crect x='168' y='248' width='80' height='10' rx='5' fill='%236C5CE7' opacity='.3'/%3E%3Crect x='168' y='276' width='90' height='10' rx='5' fill='%236C5CE7' opacity='.3'/%3E%3Crect x='168' y='340' width='70' height='10' rx='5' fill='%236C5CE7' opacity='.3'/%3E%3Crect x='168' y='368' width='85' height='10' rx='5' fill='%236C5CE7' opacity='.3'/%3E%3C/svg%3E">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { text-size-adjust: none; -webkit-text-size-adjust: none; }
@@ -88,7 +89,23 @@
   </style>
 </head>
 <body>
-  <h1>Clipboard Investigator</h1>
+  <h1 style="display:flex;align-items:center;gap:0.5rem;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="28" height="28" style="flex-shrink:0;">
+      <defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6C5CE7"/><stop offset="100%" style="stop-color:#a855f7"/></linearGradient><linearGradient id="cl" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ffffff"/><stop offset="100%" style="stop-color:#f0e6ff"/></linearGradient></defs>
+      <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bg)"/>
+      <rect x="136" y="160" width="240" height="260" rx="16" fill="url(#cl)" opacity=".95"/>
+      <rect x="196" y="120" width="120" height="60" rx="12" fill="url(#cl)" opacity=".95"/>
+      <rect x="220" y="108" width="72" height="36" rx="18" fill="url(#bg)" stroke="#fff" stroke-width="8"/>
+      <circle cx="310" cy="300" r="60" fill="none" stroke="#6C5CE7" stroke-width="14" opacity=".85"/>
+      <line x1="352" y1="342" x2="392" y2="382" stroke="#6C5CE7" stroke-width="14" stroke-linecap="round" opacity=".85"/>
+      <rect x="168" y="220" width="100" height="10" rx="5" fill="#6C5CE7" opacity=".3"/>
+      <rect x="168" y="248" width="80" height="10" rx="5" fill="#6C5CE7" opacity=".3"/>
+      <rect x="168" y="276" width="90" height="10" rx="5" fill="#6C5CE7" opacity=".3"/>
+      <rect x="168" y="340" width="70" height="10" rx="5" fill="#6C5CE7" opacity=".3"/>
+      <rect x="168" y="368" width="85" height="10" rx="5" fill="#6C5CE7" opacity=".3"/>
+    </svg>
+    Clipboard Investigator
+  </h1>
   <p class="subtitle">Inspect clipboard contents by pasting, dropping, or reading directly.</p>
   <div id="app"></div>
   <footer>
