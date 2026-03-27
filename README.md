@@ -4,6 +4,8 @@ A macOS desktop app to inspect and analyze clipboard contents in detail. See eve
 
 Built with [Tauri 2](https://tauri.app) (Rust + Vanilla JS).
 
+**[Try it in your browser](https://vijaykrishnavanshi.github.io/clipboard-investigator/)**
+
 ## Features
 
 - **Read Clipboard** -- Click a button or press `Cmd+V` to read all clipboard types via the native NSPasteboard API

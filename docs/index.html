@@ -6,245 +6,333 @@
   <title>Clipboard Investigator</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { text-size-adjust: none; -webkit-text-size-adjust: none; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      color: #1a1a2e; background: #fafbfc; line-height: 1.6;
+      font-size: 14px; line-height: 1.5; color: #333;
+      padding: 2rem; max-width: 960px; margin: 0 auto;
+      min-height: 100vh; display: flex; flex-direction: column;
     }
-
-    .hero {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff; padding: 4rem 2rem; text-align: center;
+    h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 1.5rem; }
+    code, pre {
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 0.85em;
     }
-    .hero h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
-    .hero p { font-size: 1.15rem; opacity: 0.9; max-width: 600px; margin: 0 auto 1.5rem; }
-    .hero .badges { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
-    .hero .badge {
-      font-size: 0.75rem; background: rgba(255,255,255,0.2); border-radius: 999px;
-      padding: 0.3em 0.9em; backdrop-filter: blur(4px);
-    }
-
-    .container { max-width: 860px; margin: 0 auto; padding: 2rem; }
-
-    section { margin-bottom: 3rem; }
-    section h2 {
-      font-size: 1.4rem; font-weight: 600; margin-bottom: 1rem;
-      padding-bottom: 0.4rem; border-bottom: 2px solid #e8e8f0;
-    }
-    section h3 { font-size: 1.1rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
-
-    p, li { font-size: 0.95rem; color: #444; }
-    ul { padding-left: 1.5rem; margin-bottom: 1rem; }
-    li { margin-bottom: 0.35rem; }
-
-    code {
-      font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.85em;
-      background: #f0f0f5; border-radius: 4px; padding: 0.15em 0.4em;
-    }
-    pre {
-      background: #1e1e2e; color: #cdd6f4; border-radius: 8px;
-      padding: 1.25rem; overflow-x: auto; margin: 0.75rem 0 1rem;
-      font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.85rem;
-      line-height: 1.5;
-    }
-    pre code { background: none; padding: 0; color: inherit; }
-
-    .feature-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.25rem; margin-top: 1rem;
-    }
-    .feature-card {
-      background: #fff; border: 1px solid #e8e8f0; border-radius: 8px;
-      padding: 1.25rem;
-    }
-    .feature-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; }
-    .feature-card p { font-size: 0.85rem; color: #666; }
-
-    .arch-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
-    .arch-table th, .arch-table td {
-      text-align: left; padding: 0.6em 0.75em; border-bottom: 1px solid #e8e8f0;
-      font-size: 0.9rem;
-    }
-    .arch-table th { font-weight: 600; color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
-
-    .flow-diagram {
-      background: #f7f7fc; border: 1px solid #e8e8f0; border-radius: 8px;
-      padding: 1.5rem; text-align: center; font-family: 'SF Mono', Menlo, Consolas, monospace;
-      font-size: 0.8rem; color: #555; line-height: 2; margin: 1rem 0;
-    }
-
-    a { color: #667eea; text-decoration: none; }
+    a { color: #555; text-decoration: none; }
     a:hover { text-decoration: underline; }
-
-    footer {
-      text-align: center; padding: 2rem; font-size: 0.8rem; color: #aaa;
-      border-top: 1px solid #e8e8f0;
+    button {
+      font: inherit; font-size: 0.85rem; appearance: none;
+      border: 1px solid #ccc; border-radius: 4px;
+      padding: 0.35em 0.75em; background: #fff; color: #333; cursor: pointer;
     }
+    button:hover { background: #f5f5f5; border-color: #999; }
+    button:active { background: #eee; }
+    kbd {
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 0.8em;
+      border: 1px solid #ccc; border-radius: 3px;
+      padding: 0.1em 0.35em; background: #f7f7f7;
+    }
+    .intro {
+      border: 1px solid #e0e0e0; border-radius: 6px;
+      padding: 1.25rem 1.5rem; background: #fafafa;
+    }
+    .intro p { font-size: 0.9rem; margin-bottom: 0.75rem; color: #555; }
+    .intro-actions {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+    }
+    .intro-actions span { color: #999; font-size: 0.8rem; }
+    #app { flex: 1; }
+    .results-header {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;
+    }
+    .results-header .source { font-size: 0.85rem; color: #888; }
+    .badge {
+      font-size: 0.75rem; color: #888; background: #f0f0f0;
+      border-radius: 3px; padding: 0.15em 0.5em; margin-left: 0.5rem;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left; font-size: 0.75rem; font-weight: 500; color: #999;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.5em 0.75em; border-bottom: 1px solid #e0e0e0;
+    }
+    td {
+      padding: 0.6em 0.75em; vertical-align: top;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    tr:last-child td { border-bottom: none; }
+    td.type-col { white-space: nowrap; width: 1%; color: #666; }
+    td.size-col { white-space: nowrap; width: 1%; color: #999; font-size: 0.8em; }
+    .data-content {
+      background: #f7f7f7; border-radius: 4px; padding: 0.5em 0.75em;
+      white-space: pre-wrap; word-break: break-all; max-height: 300px;
+      overflow: auto; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 0.8rem; color: #444; line-height: 1.4;
+    }
+    .data-empty { color: #bbb; font-style: italic; }
+    .data-binary { color: #999; font-size: 0.8em; }
+    td img {
+      max-width: 100%; max-height: 200px; border-radius: 4px;
+      border: 1px solid #e0e0e0;
+    }
+    footer {
+      margin-top: auto; padding-top: 1.5rem;
+      border-top: 1px solid #f0f0f0; font-size: 0.75rem; color: #bbb;
+    }
+    .drop-highlight { outline: 2px dashed #999; outline-offset: -2px; }
+    .error-msg {
+      background: #fff3f3; border: 1px solid #e8c8c8; border-radius: 4px;
+      padding: 0.5em 0.75em; color: #a44; font-size: 0.85rem; margin-top: 0.75rem;
+    }
+    @media (max-width: 600px) { body { padding: 1rem; } }
   </style>
 </head>
 <body>
-
-<div class="hero">
   <h1>Clipboard Investigator</h1>
-  <p>A macOS desktop app to inspect and analyze clipboard contents in detail. See every data type, preview images, and explore binary payloads.</p>
-  <div class="badges">
-    <span class="badge">Tauri 2.3</span>
-    <span class="badge">Rust</span>
-    <span class="badge">macOS</span>
-    <span class="badge">MIT License</span>
-  </div>
-</div>
+  <p class="subtitle">Inspect clipboard contents by pasting, dropping, or reading directly.</p>
+  <div id="app"></div>
+  <footer>
+    Based on <a href="https://github.com/evercoder/clipboard-inspector">clipboard-inspector</a>
+    by <a href="https://labs.moqups.com">Moqups Labs</a>.
+    &middot; <a href="https://github.com/vijaykrishnavanshi/clipboard-investigator">Source on GitHub</a>
+  </footer>
+  <script>
+    const appEl = document.getElementById('app');
 
-<div class="container">
+    function h(tag, attrs, ...children) {
+      const el = document.createElement(tag);
+      if (attrs) {
+        for (const [key, val] of Object.entries(attrs)) {
+          if (val === undefined || val === null) continue;
+          if (key === 'className') el.className = val;
+          else if (key.startsWith('on')) el.addEventListener(key.slice(2).toLowerCase(), val);
+          else el.setAttribute(key, val);
+        }
+      }
+      for (const child of children.flat()) {
+        if (child == null) continue;
+        el.appendChild(typeof child === 'string' || typeof child === 'number'
+          ? document.createTextNode(String(child))
+          : child);
+      }
+      return el;
+    }
 
-<section>
-  <h2>Features</h2>
-  <div class="feature-grid">
-    <div class="feature-card">
-      <h4>Read Clipboard</h4>
-      <p>Click a button or press <code>Cmd+V</code> to read all clipboard types via the native NSPasteboard API.</p>
-    </div>
-    <div class="feature-card">
-      <h4>Drag &amp; Drop</h4>
-      <p>Drop files into the window to inspect their DataTransfer details including MIME types and sizes.</p>
-    </div>
-    <div class="feature-card">
-      <h4>Image Preview</h4>
-      <p>Automatically detects image data (PNG, JPEG, TIFF, etc.) and shows inline thumbnails.</p>
-    </div>
-    <div class="feature-card">
-      <h4>Binary Data</h4>
-      <p>Non-text clipboard entries are base64-encoded and displayed with size information.</p>
-    </div>
-    <div class="feature-card">
-      <h4>Type Identification</h4>
-      <p>Displays the UTI (Uniform Type Identifier) for each clipboard entry on macOS.</p>
-    </div>
-    <div class="feature-card">
-      <h4>Lightweight</h4>
-      <p>Vanilla JS frontend with no framework dependencies. Fast startup, minimal resource usage.</p>
-    </div>
-  </div>
-</section>
+    function formatSize(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
 
-<section>
-  <h2>How It Works</h2>
-  <p>Clipboard Investigator is built with <a href="https://tauri.app">Tauri 2</a>, combining a Rust backend for native clipboard access with a vanilla JavaScript frontend rendered in a system WebView.</p>
+    function isImageType(type) {
+      return /png|tiff|image|jpeg|gif|bmp|ico|webp/i.test(type);
+    }
 
-  <h3>Architecture</h3>
-  <table class="arch-table">
-    <thead>
-      <tr><th>Layer</th><th>Technology</th><th>Role</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Backend</td><td>Rust + <code>objc</code> crate</td><td>Reads NSPasteboard via Objective-C interop</td></tr>
-      <tr><td>Framework</td><td>Tauri 2.3.1</td><td>Desktop shell, IPC bridge, bundling</td></tr>
-      <tr><td>Frontend</td><td>Vanilla JS / HTML / CSS</td><td>UI rendering and event handling</td></tr>
-      <tr><td>Serialization</td><td><code>serde</code> + <code>serde_json</code></td><td>Rust &harr; JS data transfer</td></tr>
-      <tr><td>Encoding</td><td><code>base64</code> crate</td><td>Binary clipboard data encoding</td></tr>
-    </tbody>
-  </table>
+    // --- Normalize clipboard data ---
 
-  <h3>Data Flow</h3>
-  <div class="flow-diagram">
-    User Action (button / paste / drop)<br>
-    &darr;<br>
-    JavaScript event handler<br>
-    &darr;<br>
-    <code>window.__TAURI__.core.invoke('read_clipboard')</code><br>
-    &darr;<br>
-    Rust Command: <code>read_clipboard()</code><br>
-    &darr;<br>
-    NSPasteboard API (Objective-C interop)<br>
-    &darr;<br>
-    <code>Vec&lt;ClipboardEntry&gt;</code> &rarr; JSON<br>
-    &darr;<br>
-    Render as HTML table
-  </div>
+    function normalizeDataTransfer(dt) {
+      const entries = [];
+      const types = Array.from(dt.types);
+      for (const type of types) {
+        const data = dt.getData(type);
+        entries.push({ type, data, size: data.length, isText: true });
+      }
+      if (dt.files) {
+        for (const file of Array.from(dt.files)) {
+          entries.push({
+            type: file.type || 'application/octet-stream',
+            data: null, size: file.size, isText: false,
+            file, label: file.name,
+          });
+        }
+      }
+      return entries;
+    }
 
-  <h3>Clipboard Entry Structure</h3>
-  <p>Each clipboard type is returned as a <code>ClipboardEntry</code>:</p>
-  <pre><code>{
-  "type_name": "public.utf8-plain-text",  // UTI string
-  "data": "Hello, world!",                // text or base64-encoded binary
-  "is_text": true,                         // content type flag
-  "size": 13                               // byte count
-}</code></pre>
+    async function readClipboardAPI() {
+      const entries = [];
+      try {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          for (const type of item.types) {
+            const blob = await item.getType(type);
+            if (type.startsWith('text/')) {
+              const text = await blob.text();
+              entries.push({ type, data: text, size: blob.size, isText: true });
+            } else if (type.startsWith('image/')) {
+              const buf = await blob.arrayBuffer();
+              const b64 = arrayBufferToBase64(buf);
+              entries.push({ type, data: b64, size: blob.size, isText: false, isBase64: true });
+            } else {
+              const buf = await blob.arrayBuffer();
+              const b64 = arrayBufferToBase64(buf);
+              entries.push({ type, data: b64, size: blob.size, isText: false, isBase64: true });
+            }
+          }
+        }
+      } catch (err) {
+        throw err;
+      }
+      return entries;
+    }
 
-  <h3>Text Detection</h3>
-  <p>The backend classifies UTIs as text if they contain any of these keywords: <code>text</code>, <code>string</code>, <code>url</code>, <code>html</code>, <code>xml</code>, <code>json</code>, <code>yaml</code>, <code>plist</code>, <code>rtf</code>, <code>css</code>, <code>javascript</code>, <code>source-code</code>, or <code>plain-text</code>. Everything else is treated as binary and base64-encoded.</p>
-</section>
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
 
-<section>
-  <h2>Project Structure</h2>
-  <pre><code>clipboard-investigator/
-  src-tauri/
-    src/
-      lib.rs          # Core logic: NSPasteboard reading, ClipboardEntry struct
-      main.rs         # Bootstrap entry point
-    Cargo.toml        # Rust dependencies
-    tauri.conf.json   # Tauri app config (window, CSP, bundling)
-    capabilities/     # Tauri permission definitions
-    icons/            # App icons (.icns, .ico, .png)
-  dist/
-    index.html        # HTML entry point
-    main.js           # UI logic, event handlers, Tauri IPC calls
-    style.css         # Application styles</code></pre>
-</section>
+    // --- Rendering ---
 
-<section>
-  <h2>Getting Started</h2>
+    function renderEntries(entries, source) {
+      const container = h('div', null);
+      const header = h('div', { className: 'results-header' },
+        h('button', { onClick: () => showIntro() }, '\u2190 Back'),
+        h('span', { className: 'source' }, source),
+        h('span', { className: 'badge' }, `${entries.length} type${entries.length !== 1 ? 's' : ''}`)
+      );
+      container.appendChild(header);
 
-  <h3>Prerequisites</h3>
-  <ul>
-    <li><strong>Rust</strong> 1.77.2 or later &mdash; <a href="https://rustup.rs">install via rustup</a></li>
-    <li><strong>macOS</strong> (clipboard reading uses NSPasteboard; other platforms return empty data)</li>
-    <li><strong>Tauri CLI</strong> &mdash; install with <code>cargo install tauri-cli --version "^2"</code></li>
-  </ul>
+      const table = h('table', null,
+        h('thead', null,
+          h('tr', null,
+            h('th', null, 'Type'),
+            h('th', null, 'Content'),
+            h('th', null, 'Size')
+          )
+        )
+      );
+      const tbody = h('tbody', null);
 
-  <h3>Clone the Repository</h3>
-  <pre><code>git clone https://github.com/vijaykrishnavanshi/clipboard-investigator.git
-cd clipboard-investigator</code></pre>
+      for (const entry of entries) {
+        const typeCell = h('td', { className: 'type-col' }, h('code', null, entry.type));
 
-  <h3>Run in Development Mode</h3>
-  <pre><code>cd src-tauri
-cargo tauri dev</code></pre>
-  <p>This launches the app with hot-reload for the frontend. The window opens at 1024&times;768.</p>
+        let contentCell;
+        if (entry.file) {
+          const url = URL.createObjectURL(entry.file);
+          if (entry.file.type && entry.file.type.startsWith('image/')) {
+            contentCell = h('td', null,
+              h('div', null, h('img', { src: url })),
+              entry.label ? h('div', { className: 'data-binary' }, entry.label) : null
+            );
+          } else {
+            contentCell = h('td', null,
+              h('span', { className: 'data-binary' }, entry.label || 'binary file')
+            );
+          }
+        } else if (entry.isText && entry.data) {
+          contentCell = h('td', null, h('div', { className: 'data-content' }, entry.data));
+        } else if (entry.isBase64 && entry.data && isImageType(entry.type)) {
+          const mime = entry.type.startsWith('image/') ? entry.type : 'image/png';
+          contentCell = h('td', null, h('img', { src: `data:${mime};base64,${entry.data}` }));
+        } else if (entry.isBase64 && entry.data) {
+          const preview = entry.data.length > 120 ? entry.data.substring(0, 120) + '\u2026' : entry.data;
+          contentCell = h('td', null,
+            h('div', { className: 'data-content data-binary' }, `base64: ${preview}`)
+          );
+        } else if (entry.data === '' || (entry.isText && !entry.data)) {
+          contentCell = h('td', null, h('span', { className: 'data-empty' }, 'empty'));
+        } else {
+          contentCell = h('td', null, h('span', { className: 'data-empty' }, '\u2014'));
+        }
 
-  <h3>Build for Production</h3>
-  <pre><code>cd src-tauri
-cargo tauri build</code></pre>
-  <p>The built app bundle is at:</p>
-  <pre><code>src-tauri/target/release/bundle/macos/Clipboard Investigator.app</code></pre>
-</section>
+        const sizeCell = h('td', { className: 'size-col' }, formatSize(entry.size));
+        tbody.appendChild(h('tr', null, typeCell, contentCell, sizeCell));
+      }
 
-<section>
-  <h2>Tech Stack</h2>
-  <table class="arch-table">
-    <thead>
-      <tr><th>Component</th><th>Technology</th><th>Version</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Desktop Framework</td><td>Tauri</td><td>2.3.1</td></tr>
-      <tr><td>Backend Language</td><td>Rust</td><td>1.77.2+</td></tr>
-      <tr><td>Frontend</td><td>Vanilla JS / HTML / CSS</td><td>&mdash;</td></tr>
-      <tr><td>macOS Interop</td><td><code>objc</code> crate</td><td>0.2</td></tr>
-      <tr><td>Serialization</td><td><code>serde</code> / <code>serde_json</code></td><td>1.0</td></tr>
-      <tr><td>Binary Encoding</td><td><code>base64</code> crate</td><td>0.22</td></tr>
-    </tbody>
-  </table>
-</section>
+      table.appendChild(tbody);
+      container.appendChild(table);
+      return container;
+    }
 
-<section>
-  <h2>License</h2>
-  <p>MIT &mdash; see the repository for details.</p>
-  <p>Based on <a href="https://github.com/evercoder/clipboard-inspector">clipboard-inspector</a> by <a href="https://labs.moqups.com">Moqups Labs</a>.</p>
-</section>
+    function showIntro() {
+      appEl.innerHTML = '';
+      appEl.appendChild(h('div', { className: 'intro' },
+        h('p', null, 'Paste, drop, or read clipboard to inspect its contents.'),
+        h('div', { className: 'intro-actions' },
+          h('button', {
+            onClick: async () => {
+              try {
+                const entries = await readClipboardAPI();
+                showResults(entries, 'Clipboard (read)');
+              } catch (err) {
+                showError('Clipboard access denied. Your browser may require a user gesture or permission. Try pasting instead (Ctrl+V / Cmd+V).');
+              }
+            },
+          }, 'Read clipboard'),
+          h('span', null, 'or press'),
+          h('kbd', null, 'Ctrl+V'),
+          h('span', null, '/'),
+          h('kbd', null, '\u2318V'),
+          h('span', null, 'or drop a file'),
+        )
+      ));
+    }
 
-</div>
+    function showResults(entries, source) {
+      appEl.innerHTML = '';
+      if (entries.length === 0) {
+        appEl.appendChild(h('div', { className: 'intro' },
+          h('p', null, 'Clipboard is empty or no readable types found.'),
+          h('div', { className: 'intro-actions' },
+            h('button', { onClick: () => showIntro() }, '\u2190 Back')
+          )
+        ));
+        return;
+      }
+      appEl.appendChild(renderEntries(entries, source));
+    }
 
-<footer>
-  <a href="https://github.com/vijaykrishnavanshi/clipboard-investigator">GitHub Repository</a>
-</footer>
+    function showError(msg) {
+      const existing = document.querySelector('.error-msg');
+      if (existing) existing.remove();
+      const el = h('div', { className: 'error-msg' }, msg);
+      appEl.appendChild(el);
+    }
 
+    // --- Init ---
+
+    showIntro();
+
+    document.addEventListener('paste', async (e) => {
+      e.preventDefault();
+      // First try the Clipboard API for richer data (images, etc.)
+      if (navigator.clipboard && navigator.clipboard.read) {
+        try {
+          const entries = await readClipboardAPI();
+          if (entries.length > 0) {
+            showResults(entries, 'Clipboard (paste)');
+            return;
+          }
+        } catch (_) {
+          // fall through to DataTransfer
+        }
+      }
+      // Fallback to DataTransfer from the paste event
+      if (e.clipboardData) {
+        showResults(normalizeDataTransfer(e.clipboardData), 'Clipboard (paste)');
+      }
+    });
+
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      document.body.classList.add('drop-highlight');
+    });
+
+    document.addEventListener('dragleave', (e) => {
+      if (!e.relatedTarget) document.body.classList.remove('drop-highlight');
+    });
+
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      document.body.classList.remove('drop-highlight');
+      if (e.dataTransfer) {
+        showResults(normalizeDataTransfer(e.dataTransfer), 'Drop (DataTransfer)');
+      }
+    });
+  </script>
 </body>
 </html>
