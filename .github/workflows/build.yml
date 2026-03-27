@@ -50,15 +50,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust_targets }}
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2.0.0"
 
       - name: Build Tauri app and upload to release
         uses: tauri-apps/tauri-action@v0
@@ -66,6 +64,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
+          tauriScript: cargo tauri
           args: ${{ matrix.args }}
 
   publish-release:
