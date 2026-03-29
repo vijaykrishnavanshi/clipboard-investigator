@@ -68,9 +68,8 @@ clipboard-investigator/
     capabilities/     # Tauri permission definitions
     icons/            # App icons (.icns, .ico, .png)
   frontend/
-    index.html        # HTML entry point
-    main.js           # UI logic, event handlers, Tauri IPC calls
-    style.css         # Application styles
+    index.html        # UI with inline CSS/JS, Tauri IPC calls
+    logo.svg          # App logo
   docs/
     index.html        # GitHub Pages website
 ```
