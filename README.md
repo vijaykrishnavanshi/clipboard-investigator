@@ -67,7 +67,7 @@ clipboard-investigator/
     tauri.conf.json   # Tauri app config (window, CSP, bundling)
     capabilities/     # Tauri permission definitions
     icons/            # App icons (.icns, .ico, .png)
-  dist/
+  frontend/
     index.html        # HTML entry point
     main.js           # UI logic, event handlers, Tauri IPC calls
     style.css         # Application styles

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clipboard Investigator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { text-size-adjust: none; -webkit-text-size-adjust: none; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 14px; line-height: 1.5; color: #333;
+      padding: 2rem; max-width: 960px; margin: 0 auto;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 1.5rem; }
+    code, pre {
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 0.85em;
+    }
+    a { color: #555; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button {
+      font: inherit; font-size: 0.85rem; appearance: none;
+      border: 1px solid #ccc; border-radius: 4px;
+      padding: 0.35em 0.75em; background: #fff; color: #333; cursor: pointer;
+    }
+    button:hover { background: #f5f5f5; border-color: #999; }
+    button:active { background: #eee; }
+    kbd {
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 0.8em;
+      border: 1px solid #ccc; border-radius: 3px;
+      padding: 0.1em 0.35em; background: #f7f7f7;
+    }
+    .intro {
+      border: 1px solid #e0e0e0; border-radius: 6px;
+      padding: 1.25rem 1.5rem; background: #fafafa;
+    }
+    .intro p { font-size: 0.9rem; margin-bottom: 0.75rem; color: #555; }
+    .intro-actions {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+    }
+    .intro-actions span { color: #999; font-size: 0.8rem; }
+    #app { flex: 1; }
+    .results-header {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;
+    }
+    .results-header .source { font-size: 0.85rem; color: #888; }
+    .badge {
+      font-size: 0.75rem; color: #888; background: #f0f0f0;
+      border-radius: 3px; padding: 0.15em 0.5em; margin-left: 0.5rem;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left; font-size: 0.75rem; font-weight: 500; color: #999;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.5em 0.75em; border-bottom: 1px solid #e0e0e0;
+    }
+    td {
+      padding: 0.6em 0.75em; vertical-align: top;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    tr:last-child td { border-bottom: none; }
+    td.type-col { white-space: nowrap; width: 1%; color: #666; }
+    td.size-col { white-space: nowrap; width: 1%; color: #999; font-size: 0.8em; }
+    .data-content {
+      background: #f7f7f7; border-radius: 4px; padding: 0.5em 0.75em;
+      white-space: pre-wrap; word-break: break-all; max-height: 300px;
+      overflow: auto; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 0.8rem; color: #444; line-height: 1.4;
+    }
+    .data-empty { color: #bbb; font-style: italic; }
+    .data-binary { color: #999; font-size: 0.8em; }
+    td img {
+      max-width: 100%; max-height: 200px; border-radius: 4px;
+      border: 1px solid #e0e0e0;
+    }
+    footer {
+      margin-top: auto; padding-top: 1.5rem;
+      border-top: 1px solid #f0f0f0; font-size: 0.75rem; color: #bbb;
+    }
+    .drop-highlight { outline: 2px dashed #999; outline-offset: -2px; }
+    @media (max-width: 600px) { body { padding: 1rem; } }
+  </style>
+</head>
+<body>
+  <h1 style="display:flex;align-items:center;gap:0.5rem;">
+    <img src="logo.svg" width="28" height="28" style="flex-shrink:0;" alt="Logo" />
+    Clipboard Investigator
+  </h1>
+  <p class="subtitle">Inspect clipboard contents by pasting, dropping, or reading directly.</p>
+  <div id="app"></div>
+  <footer>
+    Built with <a href="https://tauri.app">Tauri</a>.
+    Based on <a href="https://github.com/evercoder/clipboard-inspector">clipboard-inspector</a>
+    by <a href="https://labs.moqups.com">Moqups Labs</a>.
+  </footer>
+  <script>
+    const { invoke } = window.__TAURI__.core;
+    const { listen } = window.__TAURI__.event;
+    const appEl = document.getElementById('app');
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function showIntro() {
+      appEl.innerHTML = '';
+      const intro = document.createElement('div');
+      intro.className = 'intro';
+      intro.innerHTML =
+        '<p>Paste, drop, or read clipboard to inspect its contents.</p>' +
+        '<div class="intro-actions">' +
+          '<button id="read-btn">Read clipboard</button>' +
+          '<span>or press</span>' +
+          '<kbd>\u2318V</kbd>' +
+          '<span>or drop a file</span>' +
+        '</div>';
+      appEl.appendChild(intro);
+      document.getElementById('read-btn').addEventListener('click', function() {
+        doRead('read');
+      });
+    }
+
+    function escapeHtml(str) {
+      var el = document.createElement('span');
+      el.textContent = str;
+      return el.innerHTML;
+    }
+
+    function renderContent(entry) {
+      if (entry.size === 0 && !entry.data) {
+        return '<span class="data-empty">empty</span>';
+      }
+      if (entry.is_text && entry.data) {
+        return '<div class="data-content">' + escapeHtml(entry.data) + '</div>';
+      }
+      var isImage = /image|png|tiff|jpeg|gif|bmp/i.test(entry.type_name);
+      if (isImage && entry.data) {
+        var mime = entry.type_name.indexOf('png') >= 0 ? 'image/png' : 'image/jpeg';
+        return '<img src="data:' + mime + ';base64,' + entry.data + '" alt="image" />';
+      }
+      if (entry.data) {
+        var preview = entry.data.length > 120 ? entry.data.substring(0, 120) + '\u2026' : entry.data;
+        return '<div class="data-content data-binary">base64: ' + preview + '</div>';
+      }
+      return '<span class="data-empty">empty</span>';
+    }
+
+    function showResults(entries, source) {
+      appEl.innerHTML = '';
+      if (!entries || entries.length === 0) return;
+
+      var header = document.createElement('div');
+      header.className = 'results-header';
+      header.innerHTML =
+        '<button id="back-btn">\u2190 Back</button>' +
+        '<span class="source">' + escapeHtml(source) + '</span>' +
+        '<span class="badge">' + entries.length + ' type' + (entries.length !== 1 ? 's' : '') + '</span>';
+      appEl.appendChild(header);
+      document.getElementById('back-btn').addEventListener('click', showIntro);
+
+      var table = document.createElement('table');
+      table.innerHTML =
+        '<thead><tr>' +
+          '<th>Type</th>' +
+          '<th>Content</th>' +
+          '<th>Size</th>' +
+        '</tr></thead>';
+      var tbody = document.createElement('tbody');
+
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="type-col"><code>' + escapeHtml(e.type_name) + '</code></td>' +
+          '<td>' + renderContent(e) + '</td>' +
+          '<td class="size-col">' + formatSize(e.size) + '</td>';
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      appEl.appendChild(table);
+    }
+
+    function doRead(method) {
+      invoke('read_clipboard').then(function(entries) {
+        showResults(entries, 'Clipboard (' + method + ')');
+      }).catch(function(err) {
+        console.error('Failed to read clipboard:', err);
+      });
+    }
+
+    showIntro();
+
+    document.addEventListener('paste', function(e) {
+      e.preventDefault();
+      doRead('paste');
+    });
+
+    document.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      document.body.classList.add('drop-highlight');
+    });
+
+    document.addEventListener('dragleave', function(e) {
+      if (!e.relatedTarget) document.body.classList.remove('drop-highlight');
+    });
+
+    document.addEventListener('drop', function(e) {
+      e.preventDefault();
+      document.body.classList.remove('drop-highlight');
+      doRead('drop');
+    });
+
+    listen('read-clipboard-now', function() {
+      doRead('read');
+    });
+  </script>
+</body>
+</html>
