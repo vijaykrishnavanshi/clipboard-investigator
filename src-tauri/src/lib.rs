@@ -13,11 +13,11 @@ static LAST_CHANGE_COUNT: AtomicU64 = AtomicU64::new(u64::MAX);
 static MENU_OPENED_AT: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Serialize, Clone)]
-struct ClipboardEntry {
-    type_name: String,
-    data: String,
-    is_text: bool,
-    size: usize,
+pub struct ClipboardEntry {
+    pub type_name: String,
+    pub data: String,
+    pub is_text: bool,
+    pub size: usize,
 }
 
 #[cfg(target_os = "macos")]
@@ -39,7 +39,7 @@ fn uti_is_text(uti: &str) -> bool {
 }
 
 #[cfg(target_os = "macos")]
-fn read_clipboard_entries() -> Vec<ClipboardEntry> {
+pub fn read_clipboard_entries() -> Vec<ClipboardEntry> {
     use base64::Engine;
     use objc::runtime::{Class, Object};
     use objc::{msg_send, sel, sel_impl};
@@ -118,9 +118,9 @@ fn read_clipboard_entries() -> Vec<ClipboardEntry> {
 }
 
 #[cfg(target_os = "windows")]
-fn read_clipboard_entries() -> Vec<ClipboardEntry> {
+pub fn read_clipboard_entries() -> Vec<ClipboardEntry> {
     use base64::Engine;
-    use windows::Win32::Foundation::HANDLE;
+    use windows::Win32::Foundation::HGLOBAL;
     use windows::Win32::System::DataExchange::{
         CloseClipboard, EnumClipboardFormats, GetClipboardData, GetClipboardFormatNameW,
         OpenClipboard,
@@ -193,7 +193,7 @@ fn read_clipboard_entries() -> Vec<ClipboardEntry> {
 
             // Try to get clipboard data
             if let Ok(handle) = GetClipboardData(fmt) {
-                let hmem = HANDLE(handle.0);
+                let hmem = HGLOBAL(handle.0);
                 let size = GlobalSize(hmem);
                 if size > 0 {
                     let ptr = GlobalLock(hmem);
@@ -263,7 +263,7 @@ fn read_clipboard_entries() -> Vec<ClipboardEntry> {
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-fn read_clipboard_entries() -> Vec<ClipboardEntry> {
+pub fn read_clipboard_entries() -> Vec<ClipboardEntry> {
     vec![]
 }
 
