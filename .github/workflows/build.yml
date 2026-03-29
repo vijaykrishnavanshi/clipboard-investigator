@@ -101,6 +101,7 @@ jobs:
           tauriScript: cargo tauri
 
   publish-release:
+    if: always() && needs.create-release.result == 'success' && (needs.build-macos.result == 'success' || needs.build-windows.result == 'success')
     needs: [create-release, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
