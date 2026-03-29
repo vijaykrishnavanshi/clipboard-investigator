@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
-    Manager,
+    Emitter, Manager,
 };
 
 static MENU_COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -248,6 +248,13 @@ fn build_tray_menu_inner(app: &tauri::AppHandle) -> tauri::Result<()> {
 
     menu_builder = menu_builder.separator();
 
+    let open_clipboard_item = MenuItemBuilder::with_id(
+        format!("openclip_{n}"),
+        "Open with Current Clipboard",
+    )
+    .build(app)?;
+    menu_builder = menu_builder.item(&open_clipboard_item);
+
     let show_item =
         MenuItemBuilder::with_id(format!("show_{n}"), "Open Clipboard Investigator").build(app)?;
     menu_builder = menu_builder.item(&show_item);
@@ -317,10 +324,13 @@ pub fn run() {
             let handle = app.handle().clone();
 
             // Build a minimal initial menu (will be replaced by timer immediately)
+            let open_clip_item = MenuItemBuilder::with_id("openclip_init", "Open with Current Clipboard")
+                .build(&handle)?;
             let show_item = MenuItemBuilder::with_id("show_init", "Open Clipboard Investigator")
                 .build(&handle)?;
             let quit_item = MenuItemBuilder::with_id("quit_init", "Quit").build(&handle)?;
             let menu = MenuBuilder::new(&handle)
+                .item(&open_clip_item)
                 .item(&show_item)
                 .item(&quit_item)
                 .build()?;
@@ -340,7 +350,10 @@ pub fn run() {
                     // Menu item clicked — menu is closing, allow refreshes again
                     MENU_OPENED_AT.store(0, Ordering::Relaxed);
                     let id = event.id().as_ref();
-                    if id.starts_with("show") {
+                    if id.starts_with("openclip") {
+                        show_window(app);
+                        let _ = app.emit("read-clipboard-now", ());
+                    } else if id.starts_with("show") {
                         show_window(app);
                     } else if id.starts_with("quit") {
                         app.exit(0);
