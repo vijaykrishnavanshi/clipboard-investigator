@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs)]
+
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use tauri::{
@@ -443,7 +445,7 @@ fn show_window(app: &tauri::AppHandle) {
 
     #[cfg(target_os = "macos")]
     {
-        app.set_activation_policy(tauri::ActivationPolicy::Regular);
+        let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
         activate_app();
     }
 
@@ -463,7 +465,7 @@ fn hide_window(app: &tauri::AppHandle) {
         let _ = window.hide();
     }
     #[cfg(target_os = "macos")]
-    app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+    let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
     WINDOW_VISIBLE.store(false, Ordering::Relaxed);
 }
 
