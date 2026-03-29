@@ -1,4 +1,4 @@
-name: Build & Release
+name: Release
 
 on:
   push:
@@ -27,48 +27,37 @@ jobs:
               repo: context.repo.repo,
               tag_name: tag,
               name: `Clipboard Investigator ${tag}`,
-              body: `## Clipboard Investigator ${tag}\n\nDownload the installer for your platform below.\n\n| Platform | File |\n|----------|------|\n| macOS | \`.dmg\` |\n| Windows | \`.msi\` / \`.exe\` |`,
+              body: `## Clipboard Investigator ${tag}\n\nDownload the installer for your platform below.\n\n| Platform | File |\n|----------|------|\n| macOS | \`.dmg\` |`,
               draft: true,
               prerelease: false,
             });
             return data.id;
 
-  build:
+  build-macos:
     needs: create-release
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos-latest
-            args: '--target universal-apple-darwin'
-            rust_targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
-          - platform: windows-latest
-            args: ''
-            rust_targets: ''
-    runs-on: ${{ matrix.platform }}
-
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.rust_targets }}
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      - name: Build Tauri app and upload to release
+      - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           tauriScript: cargo tauri
-          args: ${{ matrix.args }}
+          args: --target universal-apple-darwin
 
   publish-release:
-    needs: [create-release, build]
+    needs: [create-release, build-macos]
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
