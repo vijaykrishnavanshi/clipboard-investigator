@@ -117,7 +117,152 @@ fn read_clipboard_entries() -> Vec<ClipboardEntry> {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
+fn read_clipboard_entries() -> Vec<ClipboardEntry> {
+    use base64::Engine;
+    use windows::Win32::Foundation::HANDLE;
+    use windows::Win32::System::DataExchange::{
+        CloseClipboard, EnumClipboardFormats, GetClipboardData, GetClipboardFormatNameW,
+        OpenClipboard,
+    };
+    use windows::Win32::System::Memory::{GlobalLock, GlobalSize, GlobalUnlock};
+    use windows::Win32::System::Ole::CF_UNICODETEXT;
+
+    // Standard clipboard format names
+    fn standard_format_name(fmt: u32) -> Option<&'static str> {
+        match fmt {
+            1 => Some("CF_TEXT"),
+            2 => Some("CF_BITMAP"),
+            3 => Some("CF_METAFILEPICT"),
+            4 => Some("CF_SYLK"),
+            5 => Some("CF_DIF"),
+            6 => Some("CF_TIFF"),
+            7 => Some("CF_OEMTEXT"),
+            8 => Some("CF_DIB"),
+            9 => Some("CF_PALETTE"),
+            10 => Some("CF_PENDATA"),
+            11 => Some("CF_RIFF"),
+            12 => Some("CF_WAVE"),
+            13 => Some("CF_UNICODETEXT"),
+            14 => Some("CF_ENHMETAFILE"),
+            15 => Some("CF_HDROP"),
+            16 => Some("CF_LOCALE"),
+            17 => Some("CF_DIBV5"),
+            _ => None,
+        }
+    }
+
+    fn is_text_format(fmt: u32, name: &str) -> bool {
+        matches!(fmt, 1 | 7 | 13)
+            || name.contains("text")
+            || name.contains("Text")
+            || name.contains("STRING")
+            || name.contains("HTML")
+            || name.contains("Rtf")
+            || name.contains("RTF")
+            || name.contains("URL")
+            || name.contains("Xml")
+            || name.contains("XML")
+            || name.contains("Json")
+            || name.contains("JSON")
+    }
+
+    let mut entries = Vec::new();
+
+    unsafe {
+        if OpenClipboard(None).is_err() {
+            return entries;
+        }
+
+        let mut fmt = EnumClipboardFormats(0);
+        while fmt != 0 {
+            // Get format name
+            let format_name = if let Some(std_name) = standard_format_name(fmt) {
+                std_name.to_string()
+            } else {
+                let mut buf = [0u16; 256];
+                let len = GetClipboardFormatNameW(fmt, &mut buf);
+                if len > 0 {
+                    String::from_utf16_lossy(&buf[..len as usize])
+                } else {
+                    format!("Format_{}", fmt)
+                }
+            };
+
+            let is_text = is_text_format(fmt, &format_name);
+
+            // Try to get clipboard data
+            if let Ok(handle) = GetClipboardData(fmt) {
+                let hmem = HANDLE(handle.0);
+                let size = GlobalSize(hmem);
+                if size > 0 {
+                    let ptr = GlobalLock(hmem);
+                    if !ptr.is_null() {
+                        if fmt == CF_UNICODETEXT.0 as u32 {
+                            // Read as UTF-16
+                            let wstr = ptr as *const u16;
+                            let mut len = 0usize;
+                            while *wstr.add(len) != 0 && len < size / 2 {
+                                len += 1;
+                            }
+                            let slice = std::slice::from_raw_parts(wstr, len);
+                            let text = String::from_utf16_lossy(slice);
+                            entries.push(ClipboardEntry {
+                                size: text.len(),
+                                data: text,
+                                is_text: true,
+                                type_name: format_name,
+                            });
+                        } else if is_text {
+                            // Read as UTF-8 / ASCII
+                            let bytes = std::slice::from_raw_parts(ptr as *const u8, size);
+                            let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
+                            let text = String::from_utf8_lossy(&bytes[..end]).to_string();
+                            entries.push(ClipboardEntry {
+                                size: text.len(),
+                                data: text,
+                                is_text: true,
+                                type_name: format_name,
+                            });
+                        } else {
+                            // Binary data — base64 encode
+                            let bytes = std::slice::from_raw_parts(ptr as *const u8, size);
+                            entries.push(ClipboardEntry {
+                                type_name: format_name,
+                                size,
+                                data: base64::engine::general_purpose::STANDARD.encode(bytes),
+                                is_text: false,
+                            });
+                        }
+                        let _ = GlobalUnlock(hmem);
+                    }
+                } else {
+                    entries.push(ClipboardEntry {
+                        type_name: format_name,
+                        size: 0,
+                        data: String::new(),
+                        is_text: false,
+                    });
+                }
+            } else {
+                entries.push(ClipboardEntry {
+                    type_name: format_name,
+                    size: 0,
+                    data: String::new(),
+                    is_text: false,
+                });
+            }
+
+            fmt = EnumClipboardFormats(fmt);
+        }
+
+        let _ = CloseClipboard();
+    }
+
+    entries
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 fn read_clipboard_entries() -> Vec<ClipboardEntry> {
     vec![]
 }
@@ -172,7 +317,13 @@ fn clipboard_change_count() -> u64 {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
+fn clipboard_change_count() -> u64 {
+    use windows::Win32::System::DataExchange::GetClipboardSequenceNumber;
+    unsafe { GetClipboardSequenceNumber() as u64 }
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 fn clipboard_change_count() -> u64 {
     0
 }
