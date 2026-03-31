@@ -167,39 +167,34 @@
     }
 
     async function readClipboardAPI() {
-      const entries = [];
-      try {
-        const items = await navigator.clipboard.read();
-        for (const item of items) {
-          for (const type of item.types) {
-            const blob = await item.getType(type);
-            if (type.startsWith('text/')) {
-              const text = await blob.text();
-              entries.push({ type, data: text, size: blob.size, isText: true });
-            } else if (type.startsWith('image/')) {
+      const items = await navigator.clipboard.read();
+      const promises = [];
+      for (const item of items) {
+        for (const type of item.types) {
+          promises.push(
+            item.getType(type).then(async (blob) => {
+              if (type.startsWith('text/')) {
+                const text = await blob.text();
+                return { type, data: text, size: blob.size, isText: true };
+              }
               const buf = await blob.arrayBuffer();
               const b64 = arrayBufferToBase64(buf);
-              entries.push({ type, data: b64, size: blob.size, isText: false, isBase64: true });
-            } else {
-              const buf = await blob.arrayBuffer();
-              const b64 = arrayBufferToBase64(buf);
-              entries.push({ type, data: b64, size: blob.size, isText: false, isBase64: true });
-            }
-          }
+              return { type, data: b64, size: blob.size, isText: false, isBase64: true };
+            })
+          );
         }
-      } catch (err) {
-        throw err;
       }
-      return entries;
+      return Promise.all(promises);
     }
 
     function arrayBufferToBase64(buffer) {
-      let binary = '';
       const bytes = new Uint8Array(buffer);
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      const chunkSize = 8192;
+      const parts = [];
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize)));
       }
-      return btoa(binary);
+      return btoa(parts.join(''));
     }
 
     // --- Rendering ---
@@ -223,6 +218,7 @@
         )
       );
       const tbody = h('tbody', null);
+      const fragment = document.createDocumentFragment();
 
       for (const entry of entries) {
         const typeCell = h('td', { className: 'type-col' }, h('code', null, entry.type));
@@ -232,7 +228,7 @@
           const url = URL.createObjectURL(entry.file);
           if (entry.file.type && entry.file.type.startsWith('image/')) {
             contentCell = h('td', null,
-              h('div', null, h('img', { src: url })),
+              h('div', null, h('img', { src: url, loading: 'lazy' })),
               entry.label ? h('div', { className: 'data-binary' }, entry.label) : null
             );
           } else {
@@ -244,7 +240,7 @@
           contentCell = h('td', null, h('div', { className: 'data-content' }, entry.data));
         } else if (entry.isBase64 && entry.data && isImageType(entry.type)) {
           const mime = entry.type.startsWith('image/') ? entry.type : 'image/png';
-          contentCell = h('td', null, h('img', { src: `data:${mime};base64,${entry.data}` }));
+          contentCell = h('td', null, h('img', { src: `data:${mime};base64,${entry.data}`, loading: 'lazy' }));
         } else if (entry.isBase64 && entry.data) {
           const preview = entry.data.length > 120 ? entry.data.substring(0, 120) + '\u2026' : entry.data;
           contentCell = h('td', null,
@@ -257,9 +253,10 @@
         }
 
         const sizeCell = h('td', { className: 'size-col' }, formatSize(entry.size));
-        tbody.appendChild(h('tr', null, typeCell, contentCell, sizeCell));
+        fragment.appendChild(h('tr', null, typeCell, contentCell, sizeCell));
       }
 
+      tbody.appendChild(fragment);
       table.appendChild(tbody);
       container.appendChild(table);
       return container;
@@ -340,7 +337,9 @@
 
     document.addEventListener('dragover', (e) => {
       e.preventDefault();
-      document.body.classList.add('drop-highlight');
+      if (!document.body.classList.contains('drop-highlight')) {
+        document.body.classList.add('drop-highlight');
+      }
     });
 
     document.addEventListener('dragleave', (e) => {
