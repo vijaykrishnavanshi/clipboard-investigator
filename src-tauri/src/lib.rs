@@ -60,7 +60,7 @@ pub fn read_clipboard_entries() -> Vec<ClipboardEntry> {
         }
 
         let count: usize = msg_send![types, count];
-        let mut entries = Vec::new();
+        let mut entries = Vec::with_capacity(count);
 
         for i in 0..count {
             let type_obj: *mut Object = msg_send![types, objectAtIndex: i];
@@ -274,31 +274,30 @@ fn read_clipboard() -> Vec<ClipboardEntry> {
     read_clipboard_entries()
 }
 
-fn get_clipboard_summary() -> String {
-    let entries = read_clipboard_entries();
+fn get_clipboard_summary(entries: &[ClipboardEntry]) -> String {
     if entries.is_empty() {
         return "(empty)".to_string();
     }
 
     if let Some(text_entry) = entries.iter().find(|e| e.is_text) {
-        let preview = if text_entry.data.chars().count() > 60 {
-            let truncated: String = text_entry.data.chars().take(60).collect();
-            format!("{}...", truncated)
-        } else {
-            text_entry.data.clone()
-        };
-        let preview = preview.replace('\n', " ").replace('\r', "");
+        let mut preview = String::with_capacity(64);
+        let mut count = 0;
+        for ch in text_entry.data.chars() {
+            if count >= 60 {
+                preview.push_str("...");
+                break;
+            }
+            match ch {
+                '\n' | '\r' => preview.push(' '),
+                other => preview.push(other),
+            }
+            count += 1;
+        }
         return preview;
     }
 
-    let types: Vec<&str> = entries.iter().map(|e| e.type_name.as_str()).collect();
-    if types.iter().any(|t| t.contains("image")) {
-        let size = entries
-            .iter()
-            .find(|e| e.type_name.contains("image"))
-            .map(|e| e.size)
-            .unwrap_or(0);
-        return format!("[Image — {} bytes]", size);
+    if let Some(img_entry) = entries.iter().find(|e| e.type_name.contains("image")) {
+        return format!("[Image — {} bytes]", img_entry.size);
     }
 
     format!("[{} types on clipboard]", entries.len())
@@ -356,7 +355,7 @@ fn build_tray_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
 
 fn build_tray_menu_inner(app: &tauri::AppHandle) -> tauri::Result<()> {
     let entries = read_clipboard_entries();
-    let summary = get_clipboard_summary();
+    let summary = get_clipboard_summary(&entries);
     let n = MENU_COUNTER.fetch_add(1, Ordering::Relaxed);
 
     let mut menu_builder = MenuBuilder::new(app);
